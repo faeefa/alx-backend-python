@@ -1,73 +1,84 @@
 #!/usr/bin/env python3
-""" Unittest module """
-
-from unittest import TestCase, mock
-from unittest.mock import patch, Mock
+"""
+Unittest utils.py
+Run: python3 -m unittest test_utils | tail -1
+"""
+import unittest
+from unittest.mock import Mock, patch
 from parameterized import parameterized
-
 from utils import access_nested_map, get_json, memoize
 
 
-class TestAccessNestedMap(TestCase):
-    """ Class for testing Nested Map function """
-    # order of args: map, path, expected_output
+class TestAccessNestedMap(unittest.TestCase):
+    """
+    Test cases
+    """
+
     @parameterized.expand([
         ({"a": 1}, ("a",), 1),
-        ({"a": {"b": 2}}, ("a",), {'b': 2}),
-        ({"a": {"b": 2}}, ("a", "b"), 2)
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, map, path, expected_output):
-        """ Test method returns correct output """
-        real_output = access_nested_map(map, path)
-        self.assertEqual(real_output, expected_output)
+    def test_access_nested_map(self, nested_map, path, expected):
+        """
+        test the access_nested_map function
+        """
+        self.assertEquals(access_nested_map(nested_map, path), expected)
 
     @parameterized.expand([
-        ({}, ("a",), 'a'),
-        ({"a": 1}, ("a", "b"), 'b')
+        ({}, ("a",), KeyError),
+        ({"a": 1}, ("a", "b"), KeyError)
     ])
-    def test_access_nested_map_exception(self, map, path, wrong_output):
-        """ Test method raises correct exception """
-        with self.assertRaises(KeyError) as e:
-            access_nested_map(map, path)
-            self.assertEqual(wrong_output, e.exception)
+    def test_access_nested_map_exception(self, nested_map, path, expected):
+        """
+        test the access_nested_map function (exception)
+        """
+        self.assertRaises(expected)
 
 
-class TestGetJson(TestCase):
-    """ Class for testing get_json function """
-    # order of args: test_url, test_payload
+class TestGetJson(unittest.TestCase):
+    """
+    Test cases
+    """
+
     @parameterized.expand([
         ("http://example.com", {"payload": True}),
         ("http://holberton.io", {"payload": False})
     ])
-    def test_get_json(self, test_url, test_payload):
-        """ Test method returns correct output """
-        # create Mock object with json method that returns test_payload
-        mock_response = Mock()
-        mock_response.json.return_value = test_payload
-        # function calls requests.get, need patch to get mock return value
-        with patch('requests.get', return_value=mock_response):
-            real_response = get_json(test_url)
-            self.assertEqual(real_response, test_payload)
-            # check that mocked method called once per input
-            mock_response.json.assert_called_once()
+    @patch('test_utils.get_json')
+    def test_get_json(self, test_url, test_payload, mock_class):
+        """
+        test the get_json function
+        """
+        mock_class.return_value = test_payload
+        self.assertEquals(get_json(test_url), test_payload)
 
 
-class TestMemoize(TestCase):
-    """ Class for testing memoization """
+class TestMemoize(unittest.TestCase):
+    """
+    Test cases
+    """
 
     def test_memoize(self):
-        """ Tests memoize function """
-
+        """
+        test the memoize function
+        """
         class TestClass:
-            """ Test class """
+            """
+            Test Class
+            """
 
             def a_method(self):
-                """ Method to always return 42 """
+                """
+                a_method
+                """
                 return 42
 
             @memoize
             def a_property(self):
-                """ Returns memoized property """
+                """
+                a_property
+                """
                 return self.a_method()
 
         with patch.object(TestClass, 'a_method', return_value=42) as patched:
